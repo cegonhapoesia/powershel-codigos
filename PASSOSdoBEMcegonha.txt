@@ -96,9 +96,10 @@ New-Item -Path $folderPath -ItemType Directory -Force | Out-Null
     <button onclick="compartilhar()">Compartilhar</button>
 
     <div class="mensagens" id="mensagens"></div>
-
+🧘‍♂️ <p>Precisa de um momento de paz? <a href="https://www.youtube.com/watch?v=inpok4MKVLM" target="_blank">Ouça uma meditação guiada</a></p>
+🧘‍♂️ <p>Aqui a minha musica preferida ABBA The Winner Takes It All <a href="https://youtu.be/92cwKCU8Z5c" target="_blank">Ouça a minha musica preferida.</a></p>
     <div class="meditacao">
-        🧘‍♂️ <p>Precisa de um momento de paz? <a href="https://www.youtube.com/watch?v=inpok4MKVLM" target="_blank">Ouça uma meditação guiada</a></p>
+        
     </div>
 
     <script>
