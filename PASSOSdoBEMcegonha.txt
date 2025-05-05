@@ -1,0 +1,130 @@
+#ABRIR SERVER NO NAVEGADOR###http://localhost:8080
+
+# Verifica se Python está instalado
+if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
+    Write-Host "❌ Python não está instalado. Por favor instale o Python para rodar o servidor." -ForegroundColor Red
+    exit
+}
+
+# Caminho do projeto
+$folderPath = "$env:TEMP\PassosDoBem"
+$htmlPath = "$folderPath\index.html"
+
+# Cria pasta e salva o HTML inspirador
+New-Item -Path $folderPath -ItemType Directory -Force | Out-Null
+
+@"
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>🌱 Passos do Bem</title>
+    <style>
+        body {
+            background: #eaf6f6;
+            font-family: 'Segoe UI', sans-serif;
+            color: #1e2f23;
+            margin: 0;
+            padding: 30px;
+            text-align: center;
+        }
+        h1 {
+            color: #2c786c;
+        }
+        .mensagem-dia {
+            background-color: #cce3dc;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px auto;
+            width: 60%;
+            font-size: 1.2em;
+        }
+        textarea {
+            width: 80%;
+            height: 100px;
+            margin-top: 20px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            font-size: 1em;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 25px;
+            background-color: #379683;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .mensagens {
+            margin-top: 30px;
+            text-align: left;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 10px;
+        }
+        .mensagens p {
+            background: #f7fff7;
+            border-left: 5px solid #379683;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+        .meditacao {
+            margin-top: 30px;
+        }
+        .meditacao a {
+            color: #05668d;
+            text-decoration: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>✨ Passos do Bem ✨</h1>
+    <p>“Cada passo de bondade transforma o mundo em silêncio.”</p>
+
+    <div class="mensagem-dia">
+        🌼 <strong>Passo do Dia:</strong> Escute alguém com o coração. Nem todo pedido de ajuda vem em palavras.
+    </div>
+
+    <textarea id="mensagem" placeholder="Compartilhe sua ação ou pensamento do bem..."></textarea><br>
+    <button onclick="compartilhar()">Compartilhar</button>
+
+    <div class="mensagens" id="mensagens"></div>
+
+    <div class="meditacao">
+        🧘‍♂️ <p>Precisa de um momento de paz? <a href="https://www.youtube.com/watch?v=inpok4MKVLM" target="_blank">Ouça uma meditação guiada</a></p>
+    </div>
+
+    <script>
+        function compartilhar() {
+            const texto = document.getElementById('mensagem').value.trim();
+            if (texto) {
+                const div = document.getElementById('mensagens');
+                const nova = document.createElement('p');
+                nova.textContent = '🌟 ' + texto;
+                div.prepend(nova);
+                document.getElementById('mensagem').value = '';
+            }
+        }
+    </script>
+
+</body>
+</html>
+"@ | Set-Content -Path $htmlPath -Encoding UTF8
+
+# Abre terminal Python local na pasta
+Set-Location $folderPath
+Start-Process python -ArgumentList "-m", "http.server", "8080"
+
+# Abre navegador
+Start-Sleep -Seconds 2
+Start-Process "http://localhost:8080"
+
+Write-Host "`n🌍 'Passos do Bem' está no ar em: http://localhost:8080" -ForegroundColor Green
+Write-Host "💡 Compartilhe boas ações e pensamentos com o mundo agora mesmo." -ForegroundColor Yellow
