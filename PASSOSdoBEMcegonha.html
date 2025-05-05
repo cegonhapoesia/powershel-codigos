@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>✨ Passos do Bem</title>
+  <style>
+    body {
+      background: #eaf6f6;
+      font-family: 'Segoe UI', sans-serif;
+      color: #1e2f23;
+      margin: 0;
+      padding: 30px;
+      text-align: center;
+    }
+    h1 {
+      color: #2c786c;
+    }
+    section {
+      margin-top: 40px;
+      padding: 20px;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+      background-color: #ffffffd5;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    .mensagem-dia, .reflexao, .missao {
+      margin: 15px 0;
+      font-size: 1.1em;
+    }
+    textarea {
+      width: 90%;
+      height: 100px;
+      margin-top: 20px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      font-size: 1em;
+    }
+    button {
+      margin-top: 10px;
+      padding: 10px 25px;
+      background-color: #379683;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1em;
+    }
+    .mensagens {
+      margin-top: 30px;
+      text-align: left;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 10px;
+    }
+    .mensagens p {
+      background: #f7fff7;
+      border-left: 5px solid #379683;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 4px;
+    }
+    .meditacao a {
+      color: #05668d;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    footer {
+      margin-top: 50px;
+      font-size: 0.9em;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>✨ Passos do Bem ✨</h1>
+  <p>“Cada passo de bondade transforma o mundo em silêncio.”</p>
+
+  <section>
+    <h2>🌱 Sobre o Projeto</h2>
+    <p>Esta é uma rede social diferente: aqui não há curtidas, julgamentos ou vaidade — apenas o bem sendo praticado, refletido e compartilhado. Um lugar para inspirar a alma.</p>
+  </section>
+
+  <section class="mensagem-dia">
+    <h3>🌼 Passo do Dia</h3>
+    <p><em>Escute alguém com o coração. Nem todo pedido de ajuda vem em palavras.</em></p>
+  </section>
+
+  <section class="reflexao">
+    <h3>🕊️ Reflexão Espiritual</h3>
+    <p><em>"A luz que você acende dentro de si pode iluminar muitos outros caminhos."</em></p>
+  </section>
+
+  <section class="missao">
+    <h3>🌍 Missão da Semana</h3>
+    <p>Ajude alguém sem esperar retorno. Um gesto anônimo. Uma oração por quem precisa.</p>
+  </section>
+
+  <section>
+    <h3>💬 Compartilhe sua ação ou pensamento do bem</h3>
+    <textarea id="mensagem" placeholder="Escreva aqui..."></textarea><br>
+    <button onclick="compartilhar()">Compartilhar</button>
+    <div class="mensagens" id="mensagens"></div>
+  </section>
+
+  <section class="meditacao">
+    <h3>🧘‍♂️ Meditação Guiada</h3>
+    <p><a href="https://www.youtube.com/watch?v=inpok4MKVLM" target="_blank">Clique aqui para ouvir uma meditação de paz</a></p>
+  </section>
+
+  <footer>
+    <p>✨ “Passos do Bem” — um projeto de luz para o mundo. Que cada visita aqui se torne uma semente de amor plantada na Terra. ✨</p>
+  </footer>
+
+  <script>
+    function compartilhar() {
+      const texto = document.getElementById('mensagem').value.trim();
+      if (texto) {
+        const div = document.getElementById('mensagens');
+        const nova = document.createElement('p');
+        nova.textContent = '🌟 ' + texto;
+        div.prepend(nova);
+        document.getElementById('mensagem').value = '';
+      }
+    }
+  </script>
+
+</body>
+</html>
