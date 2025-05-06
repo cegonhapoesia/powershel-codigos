@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>IDE Educacional com Gráficos e Desafios Python</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: #f0f4f8;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #4caf50;
+      color: white;
+      padding: 20px;
+      font-size: 24px;
+      font-weight: bold;
+    }
+    .editor {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      padding: 20px;
+    }
+    textarea {
+      width: 45%;
+      height: 200px;
+      font-family: monospace;
+      font-size: 14px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: white;
+      resize: vertical;
+    }
+    button {
+      padding: 12px 20px;
+      margin: 10px;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #388e3c;
+    }
+    #mensagemVoz {
+      margin: 20px auto;
+      font-size: 18px;
+      color: #333;
+      white-space: pre-wrap;
+      text-align: left;
+      max-width: 90%;
+      padding: 10px 20px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    .dark-mode {
+      background-color: #2e2e2e;
+      color: #fff;
+    }
+    .dark-mode header {
+      background-color: #333;
+    }
+    .dark-mode textarea {
+      background-color: #444;
+      color: #fff;
+    }
+    .dark-mode #mensagemVoz {
+      background-color: #444;
+      color: #fff;
+    }
+    .search-container {
+      margin-top: 20px;
+    }
+    .search-container input {
+      width: 80%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-right: 10px;
+    }
+    .search-container button {
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    IDE Educacional 🧠 com Desafios e Gráficos Python 📊
+    <div>
+      <button onclick="executar()">▶️ Executar Código</button>
+      <button onclick="limparEditor()">🧹 Limpar Editor</button>
+      <button onclick="mudarTema()">🌙 / 🌞 Mudar Tema</button>
+      <button onclick="exportarCodigo()">💾 Exportar Código</button>
+      <button onclick="iniciarDesafio()">💡 Desafio Python</button>
+    </div>
+  </header>
+
+  <!-- Pesquisa Bing dentro da IDE -->
+  <div class="search-container">
+    <input type="text" id="pesquisa-bing" placeholder="Pesquise no Bing..." />
+    <button onclick="pesquisarBing()">🔍 Pesquisar</button>
+  </div>
+
+  <div class="editor">
+    <textarea id="html" placeholder="HTML aqui..."><h1>Olá Mundo</h1></textarea>
+    <textarea id="css" placeholder="CSS aqui...">h1 { color: blue; }</textarea>
+    <textarea id="js" placeholder="JavaScript aqui...">console.log("JS funcionando!");</textarea>
+    <textarea id="python" placeholder="Python aqui...">print("Olá do Python!")</textarea>
+  </div>
+
+  <div id="mensagemVoz">💬 Saída do Python aparecerá aqui...</div>
+
+  <!-- Pyodide -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+  <script>
+    let pyodide = null;
+    let desafioAtivo = false;
+
+    async function iniciarPyodide() {
+      pyodide = await loadPyodide();
+      await pyodide.loadPackage(["matplotlib", "micropip"]);
+      console.log("✅ Pyodide com matplotlib carregado!");
+    }
+
+    iniciarPyodide();
+
+    async function executar() {
+      const html = document.getElementById("html").value;
+      const css = `<style>${document.getElementById("css").value}</style>`;
+      const js = `<script>${document.getElementById("js").value}<\/script>`;
+      const python = document.getElementById("python").value;
+
+      const safeLinks = `
+        <script>
+          document.addEventListener('click', function(e) {
+            if (e.target.tagName === 'A' && e.target.href) {
+              e.preventDefault();
+              window.open(e.target.href, '_blank');
+            }
+          });
+        <\/script>
+      `;
+
+      const code = html + css + js + safeLinks;
+
+      const iframe = document.createElement("iframe");
+      iframe.srcdoc = code;
+      iframe.style.width = "100%";
+      iframe.style.height = "400px";
+      document.getElementById("mensagemVoz").innerHTML = "";
+      document.getElementById("mensagemVoz").appendChild(iframe);
+
+      if (python && pyodide) {
+        try {
+          const fullCode = `
+import sys
+from io import StringIO, BytesIO
+import base64
+import matplotlib.pyplot as plt
+
+sys.stdout = StringIO()
+buf = BytesIO()
+
+# Executar código do usuário
+def user_code():
+${python.split('\n').map(line => '  ' + line).join('\n')}
+
+user_code()
+
+# Capturar saída do print
+texto = sys.stdout.getvalue()
+
+# Verificar se foi gerado gráfico
+html = ""
+if plt.get_fignums():
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+    img_data = base64.b64encode(buf.read()).decode('utf-8')
+    html += f"<img src='data:image/png;base64,{img_data}'/>"
+    plt.close()
+
+# Retornar texto + imagem
+texto + html
+          `;
+          let output = await pyodide.runPythonAsync(fullCode);
+
+          if (output.includes("<img")) {
+            document.getElementById("mensagemVoz").innerHTML = output;
+          } else {
+            exibirMensagem(`🐍 Python:\n${output}`);
+          }
+        } catch (err) {
+          exibirMensagem(`❌ Erro no Python:\n${err}`);
+        }
+      } else if (!pyodide) {
+        exibirMensagem("⚠️ Pyodide ainda está carregando. Tente novamente em instantes.");
+      }
+    }
+
+    function exibirMensagem(msg) {
+      document.getElementById("mensagemVoz").innerText = msg;
+    }
+
+    function limparEditor() {
+      document.getElementById("html").value = "";
+      document.getElementById("css").value = "";
+      document.getElementById("js").value = "";
+      document.getElementById("python").value = "";
+      exibirMensagem("🧹 Editor limpo!");
+    }
+
+    function mudarTema() {
+      document.body.classList.toggle("dark-mode");
+      const tema = document.body.classList.contains("dark-mode") ? "escuro" : "claro";
+      exibirMensagem(`🌙 Tema ${tema} ativado.`);
+    }
+
+    function exportarCodigo() {
+      const html = document.getElementById("html").value;
+      const css = document.getElementById("css").value;
+      const js = document.getElementById("js").value;
+      const python = document.getElementById("python").value;
+
+      const codigoCompleto = `HTML:\n${html}\n\nCSS:\n${css}\n\nJavaScript:\n${js}\n\nPython:\n${python}`;
+      const blob = new Blob([codigoCompleto], { type: "text/plain;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "codigo-ide.txt";
+      link.click();
+    }
+
+    function iniciarDesafio() {
+      desafioAtivo = true;
+      document.getElementById("mensagemVoz").innerHTML = `
+        <h3>Desafio Python: Calcule o fatorial de um número</h3>
+        <p>Escreva um código que calcule o fatorial de um número. Exemplo:</p>
+        <code>fatorial(5) # 120</code>
+      `;
+      document.getElementById("python").value = `
+# Escreva seu código para calcular o fatorial abaixo
+      `;
+    }
+
+    function pesquisarBing() {
+      const pesquisa = document.getElementById("pesquisa-bing").value;
+      if (pesquisa) {
+        // Abrir nova janela para pesquisa do Bing
+        window.open(`https://www.bing.com/search?q=${encodeURIComponent(pesquisa)}`, '_blank');
+      } else {
+        alert("Por favor, insira um termo de pesquisa.");
+      }
+    }
+  </script>
+</body>
+</html>
+
