@@ -1,0 +1,250 @@
+
+# MELHOR DESCRIPTOGRAFIA E PESQUISE CSRF WEB
+# COPIAR LINK CSRF E COLAR NO NAVEGADOR
+#COPIAR LINK INTERNO e adicionar ao link PAi
+
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+Add-Type -AssemblyName System.Security
+
+function Search-CryptFiles {
+    param ([string]$Path)
+    $extensions = @(".enc", ".crypt", ".aes", ".zip", ".txt", "")
+    $files = Get-ChildItem -Path $Path -Recurse -File | Where-Object { $extensions -contains $_.Extension }
+    return $files
+}
+
+function Decrypt-AES-BruteForce {
+    param ([string]$FilePath, [string[]]$PasswordList)
+    $allBytes = [System.IO.File]::ReadAllBytes($FilePath)
+    $salt = $allBytes[0..15]
+    $cipherText = $allBytes[16..($allBytes.Length - 1)]
+    foreach ($password in $PasswordList) {
+        try {
+            $pbkdf2 = [System.Security.Cryptography.Rfc2898DeriveBytes]::New($password, $salt, 10000, [System.Security.Cryptography.HashAlgorithmName]::SHA256)
+            $key = $pbkdf2.GetBytes(32)
+            $iv = $pbkdf2.GetBytes(16)
+            $aes = [System.Security.Cryptography.Aes]::Create()
+            $aes.Key = $key
+            $aes.IV = $iv
+            $aes.Mode = 'CBC'
+            $aes.Padding = 'PKCS7'
+            $ms = [System.IO.MemoryStream]::new()
+            $cs = [System.Security.Cryptography.CryptoStream]::new($ms, $aes.CreateDecryptor(), 'Write')
+            $cs.Write($cipherText, 0, $cipherText.Length)
+            $cs.Close()
+            $decryptedText = [System.Text.Encoding]::UTF8.GetString($ms.ToArray())
+            if ($decryptedText) { return $decryptedText }
+        } catch { continue }
+    }
+    return $null
+}
+
+function Decrypt-ZIP-BruteForce {
+    param ([string]$FilePath, [string[]]$PasswordList)
+    $documentsFolder = [Environment]::GetFolderPath("MyDocuments")
+    foreach ($password in $PasswordList) {
+        try {
+            $zipFile = [System.IO.Compression.ZipFile]::OpenRead($FilePath)
+            $zipFile.Entries | ForEach-Object {
+                try {
+                    $_.ExtractToFile("$documentsFolder\$($_.FullName)", $true)
+                    return "$documentsFolder\$($_.FullName)"
+                } catch { return $null }
+            }
+        } catch { continue }
+    }
+    return $null
+}
+
+function Decode-Base64OrHex {
+    param ([string]$FilePath)
+    try { $content = [System.IO.File]::ReadAllText($FilePath) } catch { return $null }
+    try {
+        $bytes = [System.Convert]::FromBase64String($content)
+        return [System.Text.Encoding]::UTF8.GetString($bytes)
+    } catch {
+        try {
+            $bytes = [System.Text.Encoding]::UTF8.GetBytes($content)
+            return [System.Text.Encoding]::UTF8.GetString($bytes)
+        } catch { return $null }
+    }
+}
+
+function Show-Result {
+    param ([string]$content, [string]$FileName)
+    $documentsFolder = [Environment]::GetFolderPath("MyDocuments")
+    $outputFile = Join-Path $documentsFolder "$FileName.txt"
+    [System.IO.File]::WriteAllText($outputFile, $content)
+    return $outputFile
+}
+
+function Generate-PasswordList {
+    return @("123456", "password", "123456789", "12345", "1234", "qwerty", "abc123", "letmein", "welcome", "password1", "admin", "123123", "sunshine", "iloveyou", "monkey", "football", "123qwe", "123abc")
+}
+
+function Start-CSRF-LinkScanner {
+    $form = New-Object Windows.Forms.Form
+    $form.Text = "CSRF Link Scanner"
+    $form.Size = New-Object Drawing.Size(520,450)
+    $form.StartPosition = "CenterScreen"
+
+    $label = New-Object Windows.Forms.Label
+    $label.Text = "Digite a URL:"
+    $label.Location = New-Object Drawing.Point(10,10)
+    $label.Size = New-Object Drawing.Size(100,20)
+    $form.Controls.Add($label)
+
+    $txtURL = New-Object Windows.Forms.TextBox
+    $txtURL.Size = New-Object Drawing.Size(350,20)
+    $txtURL.Location = New-Object Drawing.Point(100,10)
+    $form.Controls.Add($txtURL)
+
+    $btnScan = New-Object Windows.Forms.Button
+    $btnScan.Text = "Procurar Links Internos"
+    $btnScan.Size = New-Object Drawing.Size(200,30)
+    $btnScan.Location = New-Object Drawing.Point(150,40)
+    $form.Controls.Add($btnScan)
+
+    $listBox = New-Object Windows.Forms.ListBox
+    $listBox.Size = New-Object Drawing.Size(470,250)
+    $listBox.Location = New-Object Drawing.Point(20,80)
+    $form.Controls.Add($listBox)
+
+    $btnCopyLink = New-Object Windows.Forms.Button
+    $btnCopyLink.Text = "Copiar Link Selecionado"
+    $btnCopyLink.Size = New-Object Drawing.Size(200,30)
+    $btnCopyLink.Location = New-Object Drawing.Point(150,340)
+    $form.Controls.Add($btnCopyLink)
+
+    $btnScan.Add_Click({
+        $url = $txtURL.Text
+        try {
+            $wc = New-Object System.Net.WebClient
+            $wc.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/119.0.0.0 Safari/537.36")
+            $html = $wc.DownloadString($url)
+
+            $domain = ([System.Uri]$url).Host
+            $matches = [regex]::Matches($html, 'href\s*=\s*["'']([^"'']+)["'']')
+
+            $listBox.Items.Clear()
+            foreach ($match in $matches) {
+                $link = $match.Groups[1].Value
+                if ($link -match "^/" -or $link -match "$domain") {
+                    if ($link -notin $listBox.Items) {
+                        $listBox.Items.Add($link)
+                    }
+                }
+            }
+
+            if ($listBox.Items.Count -eq 0) {
+                $listBox.Items.Add("Nenhum link interno encontrado.")
+            }
+
+        } catch {
+            [System.Windows.Forms.MessageBox]::Show("Erro ao acessar a URL. O site pode estar bloqueando acesso automático.", "Erro")
+        }
+    })
+
+    $listBox.Add_DoubleClick({
+        if ($listBox.SelectedItem -and $listBox.SelectedItem -ne "Nenhum link interno encontrado.") {
+            [System.Windows.Forms.Clipboard]::SetText($listBox.SelectedItem.ToString())
+            [System.Windows.Forms.MessageBox]::Show("Link copiado para a área de transferência!", "Copiado")
+        }
+    })
+
+    $btnCopyLink.Add_Click({
+        if ($listBox.SelectedItem -and $listBox.SelectedItem -ne "Nenhum link interno encontrado.") {
+            [System.Windows.Forms.Clipboard]::SetText($listBox.SelectedItem.ToString())
+            [System.Windows.Forms.MessageBox]::Show("Link copiado para a área de transferência!", "Copiado")
+        } else {
+            [System.Windows.Forms.MessageBox]::Show("Selecione um link primeiro.", "Aviso")
+        }
+    })
+
+    $form.Topmost = $true
+    $form.ShowDialog()
+}
+
+function Show-Menu {
+    $form = New-Object System.Windows.Forms.Form
+    $form.Text = "Menu Principal"
+    $form.Size = New-Object System.Drawing.Size(400,350)
+    $form.StartPosition = "CenterScreen"
+
+    $btnDecrypt = New-Object System.Windows.Forms.Button
+    $btnDecrypt.Text = "Descriptografar Arquivos"
+    $btnDecrypt.Size = New-Object System.Drawing.Size(300,40)
+    $btnDecrypt.Location = New-Object System.Drawing.Point(50,30)
+    $btnDecrypt.Add_Click({
+        $dialog = New-Object System.Windows.Forms.FolderBrowserDialog
+        if ($dialog.ShowDialog() -eq "OK") {
+            $path = $dialog.SelectedPath
+            $passwordList = Generate-PasswordList
+            $files = Search-CryptFiles -Path $path
+            if ($files.Count -gt 0) {
+                foreach ($file in $files) {
+                    $fileContent = ""
+                    if ($file.Extension -in @(".aes",".enc",".crypt")) {
+                        $fileContent = Decrypt-AES-BruteForce -FilePath $file.FullName -PasswordList $passwordList
+                    } elseif ($file.Extension -eq ".zip") {
+                        $fileContent = Decrypt-ZIP-BruteForce -FilePath $file.FullName -PasswordList $passwordList
+                    } else {
+                        $fileContent = Decode-Base64OrHex -FilePath $file.FullName
+                    }
+                    if ($fileContent) {
+                        $outputFile = Show-Result -content $fileContent -FileName $file.BaseName
+                        [System.Windows.Forms.MessageBox]::Show("Sucesso: $outputFile", "OK")
+                    } else {
+                        [System.Windows.Forms.MessageBox]::Show("Erro: $($file.Name)", "Falha")
+                    }
+                }
+            } else {
+                [System.Windows.Forms.MessageBox]::Show("Nenhum arquivo encontrado.", "Aviso")
+            }
+        }
+        $form.Close()
+    })
+    $form.Controls.Add($btnDecrypt)
+
+    $btnBing = New-Object System.Windows.Forms.Button
+    $btnBing.Text = "Abrir Pesquisa no Bing"
+    $btnBing.Size = New-Object System.Drawing.Size(300,40)
+    $btnBing.Location = New-Object System.Drawing.Point(50,90)
+    $btnBing.Add_Click({
+        $query = "como descriptografar arquivos .aes .enc .zip .txt com PowerShell"
+        $url = "https://www.bing.com/search?q=" + [System.Web.HttpUtility]::UrlEncode($query)
+        Start-Process $url
+        $form.Close()
+    })
+    $form.Controls.Add($btnBing)
+
+    $btnCSRF = New-Object System.Windows.Forms.Button
+    $btnCSRF.Text = "Pesquisar CSRF Links"
+    $btnCSRF.Size = New-Object System.Drawing.Size(300,40)
+    $btnCSRF.Location = New-Object System.Drawing.Point(50,150)
+    $btnCSRF.Add_Click({
+        Start-CSRF-LinkScanner
+        $form.Close()
+    })
+    $form.Controls.Add($btnCSRF)
+
+    $btnSair = New-Object System.Windows.Forms.Button
+    $btnSair.Text = "Sair"
+    $btnSair.Size = New-Object System.Drawing.Size(300,40)
+    $btnSair.Location = New-Object System.Drawing.Point(50,210)
+    $btnSair.Add_Click({
+        $global:continueLoop = $false
+        $form.Close()
+    })
+    $form.Controls.Add($btnSair)
+
+    $form.Topmost = $true
+    $form.ShowDialog()
+}
+
+# Loop principal do menu
+$global:continueLoop = $true
+while ($global:continueLoop) {
+    Show-Menu
+}
