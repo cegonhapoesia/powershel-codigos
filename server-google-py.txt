@@ -1,0 +1,74 @@
+#MELHOR SERVER PESQUISE HACKER google
+
+# Caminho base
+$baseDir = "$PSScriptRoot\servidor_web"
+$siteDir = "$baseDir\site"
+$serverPy = "$baseDir\server.py"
+
+# Cria as pastas se não existirem
+if (-Not (Test-Path $siteDir)) {
+    New-Item -ItemType Directory -Path $siteDir -Force | Out-Null
+}
+
+# Cria o index.html
+@'
+# Cria o index.html com pesquisa Bing
+@'
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Pesquisa Profunda no Google</title>
+</head>
+<body>
+  <h2>Busca Profunda no Google</h2>
+  <form id="searchForm">
+    <label>Digite sua pesquisa avançada:<br>
+      <input type="text" id="query" name="query" placeholder='Ex: site:gov.br "fraude fiscal" -fake' required style="width: 80%;">
+    </label><br><br>
+    <button type="submit">Pesquisar</button>
+  </form>
+
+  <script>
+    document.getElementById('searchForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const query = document.getElementById('query').value;
+      const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+      window.open(searchUrl, '_blank');
+    });
+  </script>
+</body>
+</html>
+
+
+'@ | Set-Content "$siteDir\index.html"
+
+
+# Cria o server.py
+@"
+import http.server
+import socketserver
+import webbrowser
+import os
+
+PORT = 8000
+DIRECTORY = "site"
+
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=DIRECTORY, **kwargs)
+
+def main():
+    os.system('cls' if os.name == 'nt' else 'clear')
+    print(f"Servidor rodando em http://localhost:{PORT}")
+    with socketserver.TCPServer(("", PORT), Handler) as httpd:
+        webbrowser.open(f"http://localhost:{PORT}")
+        httpd.serve_forever()
+
+if __name__ == "__main__":
+    main()
+"@ | Set-Content $serverPy
+
+# Vai até a pasta e roda o servidor
+Set-Location $baseDir
+Start-Process powershell -ArgumentList "python server.py"
