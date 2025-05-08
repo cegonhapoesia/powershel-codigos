@@ -1,0 +1,71 @@
+#MELHOR SERVER PESQUISE HACKER
+
+# Caminho base
+$baseDir = "$PSScriptRoot\servidor_web"
+$siteDir = "$baseDir\site"
+$serverPy = "$baseDir\server.py"
+
+# Cria as pastas se não existirem
+if (-Not (Test-Path $siteDir)) {
+    New-Item -ItemType Directory -Path $siteDir -Force | Out-Null
+}
+
+# Cria o index.html
+@'
+# Cria o index.html com pesquisa Bing
+@'
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Servidor Python com Pesquisa Bing</title>
+    <script>
+        function digaOla() {
+            alert("Olá do JavaScript!");
+        }
+    </script>
+</head>
+<body>
+    <h1>Servidor Python com HTML + JS + Pesquisa Bing</h1>
+    <button onclick="digaOla()">Clique aqui</button>
+
+    <hr>
+
+    <h2>Pesquisar no Bing</h2>
+    <form action="https://www.bing.com/search" method="get" target="_blank">
+        <input type="text" name="q" placeholder="Digite sua pesquisa..." style="width: 300px; padding: 5px;">
+        <input type="submit" value="Pesquisar" style="padding: 5px 10px;">
+    </form>
+</body>
+</html>
+'@ | Set-Content "$siteDir\index.html"
+
+
+# Cria o server.py
+@"
+import http.server
+import socketserver
+import webbrowser
+import os
+
+PORT = 8000
+DIRECTORY = "site"
+
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=DIRECTORY, **kwargs)
+
+def main():
+    os.system('cls' if os.name == 'nt' else 'clear')
+    print(f"Servidor rodando em http://localhost:{PORT}")
+    with socketserver.TCPServer(("", PORT), Handler) as httpd:
+        webbrowser.open(f"http://localhost:{PORT}")
+        httpd.serve_forever()
+
+if __name__ == "__main__":
+    main()
+"@ | Set-Content $serverPy
+
+# Vai até a pasta e roda o servidor
+Set-Location $baseDir
+Start-Process powershell -ArgumentList "python server.py"
