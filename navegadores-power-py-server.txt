@@ -1,0 +1,104 @@
+#server pesquise NAVEGADORES SERVER PYTHON POWER
+
+# Caminho base
+$baseDir = "$PSScriptRoot\servidor_web"
+$siteDir = "$baseDir\site"
+$serverPy = "$baseDir\server.py"
+
+# Cria as pastas se não existirem
+if (-Not (Test-Path $siteDir)) {
+    New-Item -ItemType Directory -Path $siteDir -Force | Out-Null
+}
+
+# Cria o index.html
+@'
+# Cria o index.html com pesquisa Bing
+@'
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Pesquisa Avançada Multibusca</title>
+</head>
+<body>
+  <h2>PESQUISA AVANÇADA – MultiSearch Hacker Ético</h2>
+  
+  <form id="multiSearchForm">
+    <label>Digite sua pesquisa avançada:<br>
+      <input type="text" id="query" name="query" placeholder='Ex: site:gov.br "fraude fiscal" -fake' required style="width: 80%;">
+    </label><br><br>
+
+    <button type="button" onclick="pesquisar('google')">Google</button>
+    <button type="button" onclick="pesquisar('bing')">Bing</button>
+    <button type="button" onclick="pesquisar('duckduckgo')">DuckDuckGo</button>
+    <button type="button" onclick="pesquisar('yandex')">Yandex</button>
+    <button type="button" onclick="pesquisar('baidu')">Baidu</button>
+    <button type="button" onclick="pesquisar('ahmia')">Ahmia (Dark Web)</button>
+  </form>
+
+  <script>
+    function pesquisar(motor) {
+      const query = document.getElementById('query').value;
+      let searchUrl = '';
+
+      switch (motor) {
+        case 'google':
+          searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+          break;
+        case 'bing':
+          searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
+          break;
+        case 'duckduckgo':
+          searchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(query)}`;
+          break;
+        case 'yandex':
+          searchUrl = `https://yandex.com/search/?text=${encodeURIComponent(query)}`;
+          break;
+        case 'baidu':
+          searchUrl = `https://www.baidu.com/s?wd=${encodeURIComponent(query)}`;
+          break;
+        case 'ahmia':
+          searchUrl = `https://ahmia.fi/search/?q=${encodeURIComponent(query)}`;
+          break;
+        default:
+          return;
+      }
+
+      window.open(searchUrl, '_blank');
+    }
+  </script>
+</body>
+</html>
+
+
+'@ | Set-Content "$siteDir\index.html"
+
+
+# Cria o server.py
+@"
+import http.server
+import socketserver
+import webbrowser
+import os
+
+PORT = 8000
+DIRECTORY = "site"
+
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=DIRECTORY, **kwargs)
+
+def main():
+    os.system('cls' if os.name == 'nt' else 'clear')
+    print(f"Servidor rodando em http://localhost:{PORT}")
+    with socketserver.TCPServer(("", PORT), Handler) as httpd:
+        webbrowser.open(f"http://localhost:{PORT}")
+        httpd.serve_forever()
+
+if __name__ == "__main__":
+    main()
+"@ | Set-Content $serverPy
+
+# Vai até a pasta e roda o servidor
+Set-Location $baseDir
+Start-Process powershell -ArgumentList "python server.py"
