@@ -1,0 +1,180 @@
+# Senha correta
+$senhaCorreta = "log cegonha"
+
+# Loop de senha
+while ($true) {
+    $senhaDigitada = Read-Host "Digite a senha para continuar (ou 'sair')"
+    if ($senhaDigitada -eq "sair") {
+        Write-Host "Saindo..."
+        exit
+    }
+    if ($senhaDigitada -eq $senhaCorreta) {
+        Write-Host "Senha correta. Bem-vindo!"
+        break
+    } else {
+        Write-Host "Senha incorreta. Tente novamente."
+    }
+}
+
+# Variáveis
+$pastaNGC = "$env:ProgramData\Microsoft\NGC"
+$logPath = "$env:USERPROFILE\Desktop\log_tpm.txt"
+$log = "Log iniciado em: $(Get-Date)`r`n"
+
+# Menu principal
+while ($true) {
+    Write-Host "`n========= MENU ========="
+    Write-Host "1 - Verificar TPM"
+    Write-Host "2 - Verificar BitLocker"
+    Write-Host "3 - Verificar Defender"
+    Write-Host "4 - Defender: Verificação rápida"
+    Write-Host "5 - Limpar sistema (limpeza de disco)"
+    Write-Host "6 - Reparar arquivos (SFC)"
+    Write-Host "7 - Reparar sistema (DISM)"
+    Write-Host "8 - Abrir pasta NGC"
+    Write-Host "9 - Ver log"
+    Write-Host "10 - Laboratório de Comandos Personalizados"
+    Write-Host "11 - Abrir qualquer arquivo"
+    Write-Host "12 - Listar pastas do sistema (C:\)"
+    Write-Host "13 - Sair"
+    $opcao = Read-Host "Escolha uma opção"
+
+    switch ($opcao) {
+        1 {
+            $tpm = Get-CimInstance -Namespace 'Root\CIMv2\Security\MicrosoftTpm' -ClassName Win32_Tpm
+            if ($tpm) {
+                $log += "TPM encontrado.`r`n"
+                $log += "TPM Ativado: $($tpm.IsEnabled_InitialValue)`r`n"
+                $log += "TPM Funcional: $($tpm.IsActivated_Initializable)`r`n"
+                Write-Host "TPM verificado com sucesso."
+            } else {
+                $log += "TPM NÃO encontrado.`r`n"
+                Write-Host "TPM não encontrado."
+            }
+        }
+        2 {
+            $bitLockerStatus = Get-BitLockerVolume -MountPoint "C:"
+            if ($bitLockerStatus.ProtectionStatus -eq "On") {
+                $log += "BitLocker ATIVADO.`r`n"
+            } else {
+                $log += "BitLocker NÃO ativado.`r`n"
+            }
+            Write-Host "BitLocker verificado."
+        }
+        3 {
+            $status = Get-MpComputerStatus
+            $log += "Defender ativado: $($status.AntivirusEnabled)`r`n"
+            Write-Host "Windows Defender status verificado."
+        }
+        4 {
+            Start-Process powershell -Verb RunAs -ArgumentList "-Command `"Start-MpScan -ScanType QuickScan`""
+            Write-Host "Iniciando verificação rápida do Defender..."
+        }
+        5 {
+            Start-Process cleanmgr -ArgumentList "/sagerun:1"
+            Write-Host "Executando limpeza de disco..."
+        }
+        6 {
+            Start-Process powershell -Verb RunAs -ArgumentList "-Command `"sfc /scannow`""
+            Write-Host "Executando verificação de arquivos do sistema (SFC)..."
+        }
+        7 {
+            Start-Process powershell -Verb RunAs -ArgumentList "-Command `"DISM /Online /Cleanup-Image /RestoreHealth`""
+            Write-Host "Executando DISM para reparação do sistema..."
+        }
+        8 {
+            Start-Process explorer.exe $pastaNGC
+            Write-Host "Abrindo pasta NGC..."
+        }
+        9 {
+            Set-Content -Path $logPath -Value $log
+            Start-Process notepad.exe $logPath
+            Write-Host "Log aberto."
+        }
+        10 {
+            Write-Host "`n--- LABORATÓRIO DE COMANDOS PERSONALIZADOS ---"
+            Write-Host "1 - Mostrar mensagem"
+            Write-Host "2 - Abrir site"
+            Write-Host "3 - Executar comando PowerShell"
+            Write-Host "4 - Raspar links/textos de site"
+            Write-Host "5 - Raspar imagens (src)"
+            Write-Host "6 - Criar frases ou ideias"
+            Write-Host "7 - Exportar conteúdo"
+            Write-Host "8 - Traduzir uma frase"
+            Write-Host "9 - Executar script remoto"
+            Write-Host "10 - Kipografar ou Deskipografar arquivos"
+            Write-Host "11 - Raspar site com atraso"
+            $subOpcao = Read-Host "Escolha uma subopção (1-11)"
+
+            switch ($subOpcao) {
+                10 {
+                    $arquivo = Read-Host "Digite o caminho do arquivo"
+                    if (-not (Test-Path $arquivo)) {
+                        Write-Host "Arquivo não encontrado."
+                        break
+                    }
+                    $acao = Read-Host "Digite 'k' para kipografar ou 'd' para deskipografar"
+                    $chave = Read-Host "Digite uma chave secreta"
+                    try {
+                        $conteudo = Get-Content $arquivo -Raw
+                        $resultado = for ($i = 0; $i -lt $conteudo.Length; $i++) {
+                            $c = [int][char]$conteudo[$i]
+                            $k = [int][char]$chave[$i % $chave.Length]
+                            if ($acao -eq "k") {
+                                [char]($c + $k)
+                            } elseif ($acao -eq "d") {
+                                [char]($c - $k)
+                            }
+                        }
+                        if ($acao -eq "k") {
+                            $novoArquivo = "$arquivo.kip.txt"
+                        } elseif ($acao -eq "d") {
+                            $novoArquivo = "$arquivo.desk.txt"
+                        } else {
+                            Write-Host "Ação inválida."
+                            break
+                        }
+                        $resultado -join '' | Set-Content $novoArquivo
+                        Write-Host "Arquivo salvo como: $novoArquivo"
+                    } catch {
+                        Write-Host "Erro: $_"
+                    }
+                }
+                11 {
+                    $url = Read-Host "Digite a URL para raspar com atraso"
+                    Start-Sleep -Seconds 12
+                    try {
+                        $resposta = Invoke-WebRequest -Uri $url
+                        Write-Host "`nTítulo bruto:"
+                        $resposta.RawContent | Select-String -Pattern "<title>(.*?)</title>" | ForEach-Object { $_.Matches[0].Groups[1].Value }
+                        Write-Host "`nLinks:"
+                        ($resposta.Links | Select-Object -ExpandProperty href) | ForEach-Object { Write-Host $_ }
+                    } catch {
+                        Write-Host "Erro durante raspagem: $_"
+                    }
+                }
+                default {
+                    Write-Host "Subopção ainda não implementada."
+                }
+            }
+        }
+        11 {
+            $arquivo = Read-Host "Digite o caminho do arquivo"
+            if (Test-Path $arquivo) {
+                Start-Process $arquivo
+            } else {
+                Write-Host "Arquivo não encontrado."
+            }
+        }
+        12 {
+            Get-ChildItem -Directory -Path C:\ | ForEach-Object { Write-Host $_.FullName }
+        }
+        13 {
+            Write-Host "Saindo..."
+            break
+        }
+        default {
+            Write-Host "Opção inválida."
+        }
+    }
+}
